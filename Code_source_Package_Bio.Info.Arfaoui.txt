@@ -1,0 +1,89 @@
+function (s, nmin,nmax)
+{
+  nmin=as.integer(nmin);
+  nmax=as.integer(nmax);
+  ngram_head <- function(file) {
+    lengthseq = 2
+    nb = as.numeric(file[1])
+    nbrow = 0
+    m1 <- data.frame(matrix(NA, ncol = 20, nrow = 20))
+    for (i in 1:file[1]) {
+      nbrow = nbrow + as.numeric(file[i + 1])
+    }
+    first <- nb + 3
+    last <- first + as.numeric(file[2]) - 1
+    c = data.frame()
+    e = data.frame()
+    e = ""
+    for (w in 1:2) {
+      for (i in first:last) {
+        d = ngram_asweka(file[i], min =nmin, max = nmax,
+                         sep = "")
+        e[length(e) + 1:length(d)] = d
+      }
+      first = (last + 2)
+      last = (first + as.numeric(file[lengthseq + 1])) -
+        1
+    }
+    e = e[-1]
+    return(unique(e))
+  }
+  lengthseq = 2
+  file <- scan(file = s$datapath, what = character())
+  d = ngram_head(file)
+  nbrow = 0
+  for (i in 1:file[1]) {
+    nbrow = nbrow + as.numeric(file[i + 1])
+  }
+  nb = as.numeric(file[1])
+  first = nb + 3
+  last <- first + as.numeric(file[2]) - 1
+  m1 <- data.frame(matrix(NA, ncol = length(d), nrow = nbrow))
+  m2 <- data.frame(matrix(NA, ncol = length(d), nrow = nbrow))
+  m3 <- data.frame(matrix(NA, ncol = length(d), nrow = nbrow))
+  m4 <- data.frame(matrix(NA, ncol = length(d), nrow = nbrow))
+  m1 = `colnames<-`(m1, d)
+  m2 = `colnames<-`(m2, d)
+  m3 = `colnames<-`(m3, d)
+  colnames(m1)[ncol(m1)] <- "Classe"
+  colnames(m2)[ncol(m2)] <- "Classe"
+  colnames(m3)[ncol(m3)] <- "Classe"
+  nseq = 0
+  r = 1
+  first = nb + 3
+  last = (first + as.numeric(file[lengthseq])) - 1
+  fam = 1
+  m1[] <- 0
+  m2 = m1
+  m3 = m1
+  m4 = m1
+  print(last)
+  for (w in 1:2) {
+    for (i in first:last) {
+      nseq = (nseq + 1)
+      print(nseq)
+      seq <- ngram_asweka(file[i], min = nmin, max = nmax, sep = "")
+      for (k in 1:length(seq)) {
+        if (length(grep(seq[k], colnames(m1))) > 0) {
+          pos = as.numeric(grep(seq[k], colnames(m1)))
+          m1[nseq, pos] <- 1
+          m2[nseq, pos] <- m2[nseq, pos] + 1
+          m3[nseq, pos] <- m2[nseq, pos] + 1/length(seq)
+          m4[nseq, pos] <- m2[nseq, pos] + 1/length(seq)
+          rownames(m1)[nseq] <- paste("seq", nseq, sep = "")
+          rownames(m2)[nseq] <- paste("seq", nseq, sep = "")
+          rownames(m3)[nseq] <- paste("seq", nseq, sep = "")
+        }
+      }
+    }
+    m1[r:nseq, ncol(m1)] <- paste0("C", fam)
+    m2[r:nseq, ncol(m2)] <- paste0("C", fam)
+    m3[r:nseq, ncol(m3)] <- paste0("C", fam)
+    first <- (last + 2)
+    r = nseq + 1
+    fam = fam + 1
+    last = (first + as.numeric(file[lengthseq + 1])) - 1
+    print(last)
+  }
+  return(list(Bool = m1, Occ = m2, Freq = m3))
+}

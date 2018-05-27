@@ -1,0 +1,162 @@
+## app.R ##
+library(shinydashboard)
+library(shinythemes)
+library(shinyLP)
+library(stringi)
+library(ngramrr)
+library(ngram)
+library(shinyjs)
+
+library(Bio.Info.Arfaoui)
+
+
+
+## Only run examples in interactive R sessions
+
+
+## Only run examples in interactive R sessions
+if (interactive()) {
+
+#interface graphique
+ui <- dashboardPage(
+  skin = "black",
+  title = "Bio-Informatique",
+  dashboardHeader(title = span(tagList(img(src="d.png",width="45"), "Bio-Informatique"))  ,    titleWidth = 250
+  ),
+
+
+
+
+
+
+
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem("Creations Matrices", tabName = "M1", icon = icon("adn","fa-20x"))
+      #menuItem( "Widgets",,icon = icon("th")),
+
+
+
+
+    )
+  )
+  ,
+  dashboardBody(  useShinyjs(),
+    tags$head(
+      tags$link(rel = "stylesheet", type = "text/css", href = "bio.css")
+    ),
+tags$head(  tags$script(
+  HTML("
+        Shiny.addCustomMessageHandler ('hide',function (selector) {
+          $(selector).parent().slideUp();
+        });"
+  )
+)
+),
+    tags$head(tags$link(rel = "shortcut icon", href = "https://icon-icons.com/icons2/495/PNG/512/dna_icon-icons.com_48637.png")),
+
+    # Boxes need to be put in a row (or column)
+    fluidRow(
+
+
+      box(fileInput("file","import file"),height =100),
+      box(  textInput("Min", "N-grammmes entre [Min-Max] Min:", "N-grammes Min")
+            ,textInput("Max", "Max", "N-grammes Max"),
+            verbatimTextOutput("value"),
+            verbatimTextOutput("value1"))
+
+    ),
+    tabItems(
+      tabItem(tabName = "M1",
+
+             box(
+                title = "Repertoire Fichiers Resultats",status="primary", solidHeader = TRUE
+,verbatimTextOutput("text")
+
+
+              ),
+      box(title = " Tableau Boolean",status="primary", solidHeader = TRUE,
+          div(DT::dataTableOutput("view" ), style = "font-size:60%")
+
+
+
+
+)
+
+
+
+
+))
+
+
+    )
+  )
+
+
+
+server <- function(input, output) {
+    output$value <- renderText({ input$Min })
+    output$value1 <- renderText({ input$Max })
+
+  set.seed(122)
+  histdata <- rnorm(500)
+
+
+
+  output$text <- renderText({
+    filePath <- input$file
+    if(is.null(filePath)){return(NULL)}
+    setwd("c:/users/youssef/desktop/")
+    fileText <- getwd();
+    fileText
+  })
+
+
+  output$plot1 <- renderPlot({
+    data <- histdata[seq_len(input$slider)]
+    hist(data)
+  })
+
+    getData = output$view <- DT::renderDT({
+    s <- input$file
+    if(is.null(s)){return(NULL);}
+
+   c=Bio(s,input$Min,input$Max);
+
+
+
+
+   c$Bool
+   mytime <- format(Sys.time(), "%b_%d_%H_%M_%S_%Y")
+   
+   myfile <- file.path(file.path(path.expand('~')), paste0(mytime, "_", "bool", ".txt"))
+   
+   write.table(c$Bool, file =myfile, append = FALSE, quote = FALSE, sep = "\t", 
+               eol = "\n", na = "NA", dec = ".", row.names = FALSE, 
+               col.names = TRUE, qmethod = c("escape", "double"))
+   myfile <- file.path(file.path(path.expand('~')), paste0(mytime, "_", "Occurences", ".txt"))
+   
+   write.table(c$Occ, file = myfile, append = FALSE, quote = FALSE, sep = "\t", 
+               eol = "\n", na = "NA", dec = ".", row.names = FALSE, 
+               col.names = TRUE, qmethod = c("escape", "double"))
+   myfile <- file.path(file.path(path.expand('~')), paste0(mytime, "_", "Frequences", ".txt"))
+   
+   write.table(c$Freq, file = myfile, append = FALSE, quote = FALSE, sep = "\t", 
+               eol = "\n", na = "NA", dec = ",", row.names = F, 
+               col.names = TRUE)
+   
+
+
+},options = list(scrollX = TRUE))
+
+
+
+
+}
+
+
+
+}
+shinyApp(ui, server)
+
+
